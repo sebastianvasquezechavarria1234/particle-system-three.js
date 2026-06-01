@@ -13,7 +13,7 @@ const camera = new THREE.PerspectiveCamera(
   1000
 );
 
-camera.position.z = 15;
+camera.position.set(0, 8, 25);
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({
@@ -26,7 +26,7 @@ renderer.setSize(
 );
 
 renderer.setPixelRatio(
-  window.devicePixelRatio
+  Math.min(window.devicePixelRatio, 2)
 );
 
 document.body.appendChild(
@@ -41,18 +41,93 @@ const controls = new OrbitControls(
 
 controls.enableDamping = true;
 
-// Particles
-const particleCount = 10000;
+// Galaxy Parameters
+const particleCount = 25000;
+const radius = 15;
+const branches = 5;
+const spin = 1;
 
 const positions = new Float32Array(
   particleCount * 3
 );
 
-for (let i = 0; i < particleCount * 3; i++) {
-  positions[i] = (Math.random() - 0.5) * 80;
-}
+const colors = new Float32Array(
+  particleCount * 3
+);
 
-const geometry = new THREE.BufferGeometry();
+const geometry =
+  new THREE.BufferGeometry();
+
+const insideColor =
+  new THREE.Color('#00ffff');
+
+const outsideColor =
+  new THREE.Color('#ff00ff');
+
+// Generate Galaxy
+
+for (let i = 0; i < particleCount; i++) {
+
+  const i3 = i * 3;
+
+  const particleRadius =
+    Math.random() * radius;
+
+  const branchAngle =
+    (i % branches) *
+    ((Math.PI * 2) / branches);
+
+  const spinAngle =
+    particleRadius * spin;
+
+  const randomX =
+    (Math.random() - 0.5) *
+    0.5 *
+    particleRadius;
+
+  const randomY =
+    (Math.random() - 0.5) *
+    0.5;
+
+  const randomZ =
+    (Math.random() - 0.5) *
+    0.5 *
+    particleRadius;
+
+  positions[i3] =
+    Math.cos(
+      branchAngle + spinAngle
+    ) *
+      particleRadius +
+    randomX;
+
+  positions[i3 + 1] =
+    randomY;
+
+  positions[i3 + 2] =
+    Math.sin(
+      branchAngle + spinAngle
+    ) *
+      particleRadius +
+    randomZ;
+
+  const mixedColor =
+    insideColor.clone();
+
+  mixedColor.lerp(
+    outsideColor,
+    particleRadius / radius
+  );
+
+  colors[i3] =
+    mixedColor.r;
+
+  colors[i3 + 1] =
+    mixedColor.g;
+
+  colors[i3 + 2] =
+    mixedColor.b;
+}
 
 geometry.setAttribute(
   'position',
@@ -62,48 +137,74 @@ geometry.setAttribute(
   )
 );
 
-const material = new THREE.PointsMaterial({
-  size: 0.05,
-  color: 0xffffff
-});
-
-const particles = new THREE.Points(
-  geometry,
-  material
+geometry.setAttribute(
+  'color',
+  new THREE.BufferAttribute(
+    colors,
+    3
+  )
 );
 
-scene.add(particles);
+// Material
 
-// Lights
-const ambientLight = new THREE.AmbientLight(
-  0xffffff,
-  1
-);
+const material =
+  new THREE.PointsMaterial({
+    size: 0.08,
+    vertexColors: true,
+    transparent: true,
+    blending:
+      THREE.AdditiveBlending,
+    depthWrite: false
+  });
+
+// Galaxy
+
+const galaxy =
+  new THREE.Points(
+    geometry,
+    material
+  );
+
+scene.add(galaxy);
+
+// Ambient Light
+
+const ambientLight =
+  new THREE.AmbientLight(
+    0xffffff,
+    2
+  );
 
 scene.add(ambientLight);
 
 // Resize
-window.addEventListener('resize', () => {
-  camera.aspect =
-    window.innerWidth /
-    window.innerHeight;
 
-  camera.updateProjectionMatrix();
+window.addEventListener(
+  'resize',
+  () => {
 
-  renderer.setSize(
-    window.innerWidth,
-    window.innerHeight
-  );
-});
+    camera.aspect =
+      window.innerWidth /
+      window.innerHeight;
+
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(
+      window.innerWidth,
+      window.innerHeight
+    );
+  }
+);
 
 // Animation
+
 function animate() {
+
   requestAnimationFrame(
     animate
   );
 
-  particles.rotation.y += 0.0005;
-  particles.rotation.x += 0.0002;
+  galaxy.rotation.y += 0.0015;
 
   controls.update();
 
