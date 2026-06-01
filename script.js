@@ -41,7 +41,40 @@ const controls = new OrbitControls(
 
 controls.enableDamping = true;
 
-// Galaxy Parameters
+// ======================
+// ROUND PARTICLE TEXTURE
+// ======================
+
+const canvas = document.createElement('canvas');
+canvas.width = 128;
+canvas.height = 128;
+
+const ctx = canvas.getContext('2d');
+
+const gradient = ctx.createRadialGradient(
+  64,
+  64,
+  0,
+  64,
+  64,
+  64
+);
+
+gradient.addColorStop(0, 'rgba(255,255,255,1)');
+gradient.addColorStop(0.3, 'rgba(255,255,255,1)');
+gradient.addColorStop(0.6, 'rgba(255,255,255,0.4)');
+gradient.addColorStop(1, 'rgba(255,255,255,0)');
+
+ctx.fillStyle = gradient;
+ctx.fillRect(0, 0, 128, 128);
+
+const particleTexture =
+  new THREE.CanvasTexture(canvas);
+
+// ======================
+// GALAXY
+// ======================
+
 const particleCount = 25000;
 const radius = 15;
 const branches = 5;
@@ -64,8 +97,6 @@ const insideColor =
 const outsideColor =
   new THREE.Color('#ff00ff');
 
-// Generate Galaxy
-
 for (let i = 0; i < particleCount; i++) {
 
   const i3 = i * 3;
@@ -82,8 +113,8 @@ for (let i = 0; i < particleCount; i++) {
 
   const randomX =
     (Math.random() - 0.5) *
-    0.5 *
-    particleRadius;
+    particleRadius *
+    0.5;
 
   const randomY =
     (Math.random() - 0.5) *
@@ -91,13 +122,11 @@ for (let i = 0; i < particleCount; i++) {
 
   const randomZ =
     (Math.random() - 0.5) *
-    0.5 *
-    particleRadius;
+    particleRadius *
+    0.5;
 
   positions[i3] =
-    Math.cos(
-      branchAngle + spinAngle
-    ) *
+    Math.cos(branchAngle + spinAngle) *
       particleRadius +
     randomX;
 
@@ -105,9 +134,7 @@ for (let i = 0; i < particleCount; i++) {
     randomY;
 
   positions[i3 + 2] =
-    Math.sin(
-      branchAngle + spinAngle
-    ) *
+    Math.sin(branchAngle + spinAngle) *
       particleRadius +
     randomZ;
 
@@ -145,13 +172,16 @@ geometry.setAttribute(
   )
 );
 
-// Material
+// ======================
+// MATERIAL
+// ======================
 
 const material =
   new THREE.PointsMaterial({
-    size: 0.08,
-    vertexColors: true,
+    size: 0.15,
+    map: particleTexture,
     transparent: true,
+    vertexColors: true,
     blending:
       THREE.AdditiveBlending,
     depthWrite: false
@@ -167,7 +197,7 @@ const galaxy =
 
 scene.add(galaxy);
 
-// Ambient Light
+// Light
 
 const ambientLight =
   new THREE.AmbientLight(
